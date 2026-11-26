@@ -2,6 +2,16 @@ const CHANNEL = "@DRAGONMarketplace";
 const SUPPORT = "https://t.me/dragon_supports_bot";
 const AD_REWARD = 100;
 
+const MENU = {
+  "💰 My Balance": "balance",
+  "🪙 Deposit": "deposit",
+  "⚡ Earn DRAGON": "earn",
+  "📢 Promote": "promote",
+  "👥 Refer Friends": "refer",
+  "📜 History": "history",
+  "🆘 Support": "support"
+};
+
 async function telegram(env, method, data) {
   const response = await fetch(
     `https://api.telegram.org/bot${env.BOT_TOKEN}/${method}`,
@@ -24,28 +34,18 @@ async function sendMessage(env, chatId, text, keyboard = null) {
   return telegram(env, "sendMessage", data);
 }
 
-function mainKeyboard(env) {
+function menuKeyboard(env) {
   const adsUrl = `${env.PUBLIC_BASE_URL}/ads.html`;
 
   return {
-    inline_keyboard: [
-      [
-        { text: "💰 My Balance", callback_data: "balance" },
-        { text: "🎬 Watch Ads", web_app: { url: adsUrl } }
-      ],
-      [
-        { text: "🪙 Deposit", callback_data: "deposit" },
-        { text: "⚡ Earn DRAGON", callback_data: "earn" }
-      ],
-      [
-        { text: "📢 Promote", callback_data: "promote" },
-        { text: "👥 Refer Friends", callback_data: "refer" }
-      ],
-      [
-        { text: "📜 History", callback_data: "history" },
-        { text: "🆘 Support", url: SUPPORT }
-      ]
-    ]
+    keyboard: [
+      [{ text: "💰 My Balance" }, { text: "🎬 Watch Ads", web_app: { url: adsUrl } }],
+      [{ text: "🪙 Deposit" }, { text: "⚡ Earn DRAGON" }],
+      [{ text: "📢 Promote" }, { text: "👥 Refer Friends" }],
+      [{ text: "📜 History" }, { text: "🆘 Support" }]
+    ],
+    resize_keyboard: true,
+    is_persistent: true
   };
 }
 
@@ -109,8 +109,8 @@ async function showHome(env, chatId) {
   return sendMessage(
     env,
     chatId,
-    "🐉 <b>DRAGON Marketplace</b>\n\nEarn. Promote. Grow.\n\nChoose an option below.",
-    mainKeyboard(env)
+    "🐉 <b>DRAGON Marketplace</b>\n\nEarn. Promote. Grow.\n\nChoose an option from the menu below.",
+    menuKeyboard(env)
   );
 }
 
@@ -121,34 +121,18 @@ async function getBalance(env, userId) {
   `).bind(String(userId)).first();
 }
 
-async function handleCallback(env, callback) {
-  const data = callback.data;
-  const chatId = callback.message.chat.id;
-  const user = callback.from;
-
-  await telegram(env, "answerCallbackQuery", {
-    callback_query_id: callback.id
-  });
-
-  if (data === "check_join") {
-    if (!(await isMember(env, user.id))) {
-      return sendMessage(env, chatId, "❌ You have not joined the official channel yet.");
-    }
-    await registerUser(env, user);
-    return showHome(env, chatId);
-  }
-
+async function handleAction(env, chatId, user, action) {
   if (!(await isMember(env, user.id))) {
     return showJoinMessage(env, chatId);
   }
 
   await registerUser(env, user);
 
-  if (data === "menu") {
+  if (action === "menu") {
     return showHome(env, chatId);
   }
 
-  if (data === "balance") {
+  if (action === "balance") {
     const balance = await getBalance(env, user.id);
     return sendMessage(
       env,
@@ -157,7 +141,7 @@ async function handleCallback(env, callback) {
     );
   }
 
-  if (data === "deposit") {
+  if (action === "deposit") {
     return sendMessage(
       env,
       chatId,
@@ -166,14 +150,13 @@ async function handleCallback(env, callback) {
         inline_keyboard: [
           [{ text: "₿ Bitcoin (BTC)", callback_data: "dep_btc" }],
           [{ text: "💵 USDT TRC20", callback_data: "dep_trc20" }],
-          [{ text: "💵 USDT BEP20", callback_data: "dep_bep20" }],
-          [{ text: "⬅️ Back to menu", callback_data: "menu" }]
+          [{ text: "💵 USDT BEP20", callback_data: "dep_bep20" }]
         ]
       }
     );
   }
 
-  if (data === "dep_btc" || data === "dep_trc20" || data === "dep_bep20") {
+  if (action === "dep_btc" || action === "dep_trc20" || action === "dep_bep20") {
     const networks = {
       dep_btc: {
         name: "Bitcoin (BTC)",
@@ -192,7 +175,7 @@ async function handleCallback(env, callback) {
       }
     };
 
-    const net = networks[data];
+    const net = networks[action];
 
     await sendMessage(env, chatId, "⏳ Loading your " + net.name + " address...");
     await new Promise(resolve => setTimeout(resolve, 5000));
@@ -204,15 +187,15 @@ async function handleCallback(env, callback) {
     );
   }
 
-  if (data === "earn") {
+  if (action === "earn") {
     return sendMessage(
       env,
       chatId,
-      "⚡ <b>Earn DRAGON</b>\n\nJoin channel: 750 DRAGON\nJoin group: 750 DRAGON\nView post: 100 DRAGON\nReaction: 150 DRAGON\nStart promoted bot: 2,000 DRAGON\nMini App task: 2,000 DRAGON\n\nMembership tasks have a 14-day protection period.\n\nUse Watch Ads to open the ad Mini App."
+      "⚡ <b>Earn DRAGON</b>\n\nJoin channel: 750 DRAGON\nJoin group: 750 DRAGON\nView post: 100 DRAGON\nReaction: 150 DRAGON\nStart promoted bot: 2,000 DRAGON\nMini App task: 2,000 DRAGON\n\nMembership tasks have a 14-day protection period.\n\nTap 🎬 Watch Ads in the menu to open the ad Mini App."
     );
   }
 
-  if (data === "promote") {
+  if (action === "promote") {
     return sendMessage(
       env,
       chatId,
@@ -220,7 +203,7 @@ async function handleCallback(env, callback) {
     );
   }
 
-  if (data === "refer") {
+  if (action === "refer") {
     const link = `https://t.me/${env.BOT_USERNAME}?start=${user.id}`;
     return sendMessage(
       env,
@@ -229,7 +212,7 @@ async function handleCallback(env, callback) {
     );
   }
 
-  if (data === "history") {
+  if (action === "history") {
     const rows = await env.DB.prepare(`
       SELECT amount, description, created_at
       FROM ledger
@@ -249,6 +232,39 @@ async function handleCallback(env, callback) {
 
     return sendMessage(env, chatId, "📜 <b>Recent History</b>\n\n" + lines.join("\n"));
   }
+
+  if (action === "support") {
+    return sendMessage(
+      env,
+      chatId,
+      "🆘 <b>Support</b>\n\nTap the button below to contact our support team.",
+      {
+        inline_keyboard: [
+          [{ text: "💬 Open Support Chat", url: SUPPORT }]
+        ]
+      }
+    );
+  }
+}
+
+async function handleCallback(env, callback) {
+  const data = callback.data;
+  const chatId = callback.message.chat.id;
+  const user = callback.from;
+
+  await telegram(env, "answerCallbackQuery", {
+    callback_query_id: callback.id
+  });
+
+  if (data === "check_join") {
+    if (!(await isMember(env, user.id))) {
+      return sendMessage(env, chatId, "❌ You have not joined the official channel yet.");
+    }
+    await registerUser(env, user);
+    return showHome(env, chatId);
+  }
+
+  return handleAction(env, chatId, user, data);
 }
 
 async function handleMessage(env, message) {
@@ -271,23 +287,16 @@ async function handleMessage(env, message) {
     return showHome(env, chatId);
   }
 
-  if (!(await isMember(env, user.id))) {
-    return showJoinMessage(env, chatId);
+  if (MENU[text]) {
+    return handleAction(env, chatId, user, MENU[text]);
   }
 
-  await registerUser(env, user);
-
   if (text === "/balance") {
-    const balance = await getBalance(env, user.id);
-    return sendMessage(
-      env,
-      chatId,
-      `Available: ${Number(balance?.available || 0).toLocaleString()} DRAGON`
-    );
+    return handleAction(env, chatId, user, "balance");
   }
 
   if (text === "/help") {
-    return sendMessage(env, chatId, "Use the menu to access DRAGON Marketplace. Support: " + SUPPORT);
+    return sendMessage(env, chatId, "Use the menu at the bottom to access DRAGON Marketplace.\n\nSupport: " + SUPPORT);
   }
 
   return showHome(env, chatId);
