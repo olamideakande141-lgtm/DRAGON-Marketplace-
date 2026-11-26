@@ -2,7 +2,6 @@ const CHANNEL = "@DRAGONMarketplace";
 const SUPPORT = "https://t.me/dragon_supports_bot";
 const AD_REWARD = 100;
 
-// Subscriber pricing: 750,000 DRAGON per 1,000 subscribers = 750 DRAGON each (whole numbers only)
 const SUBSCRIBER_UNIT_PRICE = 750;
 const SUBSCRIBER_MIN_QTY = 50;
 const QTY_PRESETS = [50, 100, 250, 500, 1000];
@@ -343,7 +342,6 @@ async function createCampaign(env, chatId, user) {
     return showPromoteMenu(env, chatId, user);
   }
 
-  // Claim the draft first so a double tap cannot create two campaigns
   const claimed = await env.DB.prepare(`
     DELETE FROM promo_drafts WHERE telegram_id = ? AND step = 'summary'
   `).bind(id).run();
@@ -731,6 +729,38 @@ async function handleMessage(env, message) {
   return showHome(env, chatId);
 }
 
+// ---------- MONETAG POSTBACK (records only; does NOT credit DRAGON) ----------
+
+async function handleMonetagPostback(request, env) {
+  const url = new URL(request.url);
+  const provided = url.searchParams.get("secret") || request.headers.get("X-Postback-Secret");
+
+  if (!env.MONETAG_POSTBACK_SECRET || provided !== env.MONETAG_POSTBACK_SECRET) {
+    return new Response("Forbidden", { status: 403 });
+  }
+
+  const params = Object.fromEntries(url.searchParams.entries());
+  delete params.secret;
+
+  // Placeholder field names: update these after reading Monetag's postback documentation
+  const eventId = params.event_id || params.request_id || params.ymid || "";
+  const telegramId = params.user_id || params.telegram_id || null;
+
+  if (!eventId) {
+    return new Response("Missing event id", { status: 400 });
+  }
+
+  await env.DB.prepare(`
+    INSERT OR IGNORE INTO provider_callbacks
+      (provider, event_id, telegram_id, payload, status, received_at)
+    VALUES ('monetag', ?, ?, ?, 'received_unverified', CURRENT_TIMESTAMP)
+  `).bind(eventId, telegramId ? String(telegramId) : null, JSON.stringify(params)).run();
+
+  console.log("MONETAG POSTBACK RECORDED", eventId);
+
+  return new Response("OK");
+}
+
 // ---------- WEB APP AUTH AND API ----------
 
 async function verifyWebApp(initData, botToken) {
@@ -878,6 +908,10 @@ export default {
 
     if (url.pathname === "/health") {
       return Response.json({ status: "online", app: "DRAGON Marketplace" });
+    }
+
+    if (url.pathname === "/monetag-postback" && request.method === "GET") {
+      return handleMonetagPostback(request, env);
     }
 
     if (url.pathname === "/telegram-webhook" && request.method === "POST") {
