@@ -1,5 +1,4 @@
-
-name = "dragon-marketplace"
+name = "royal-cherry-04c7dragonmarketplace"
 main = "worker.js"
 compatibility_date = "2026-11-26"
 
@@ -14,7 +13,7 @@ database_id = "cbf065f7-1683-446d-a789-fb8c754a1286"
 
 [vars]
 BOT_USERNAME = "YOUR_BOT_USERNAME"
-PUBLIC_BASE_URL = "https://YOUR-WORKER.workers.dev"
+PUBLIC_BASE_URL = "https://royal-cherry-04c7dragonmarketplace.olamideakande141.workers.dev"
 ADS_TEST_MODE = "true"
 BTC_ADDRESS = "bc1q5tueekneell0twuaavs9gsacmehtr002g060m2"
 USDT_TRC20_ADDRESS = "TBTz7KMsaJExn6yb6rXyzFPSdzuwaoLN6h"
