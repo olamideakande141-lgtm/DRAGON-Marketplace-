@@ -195,6 +195,7 @@ async function handleCallback(env, callback) {
     const net = networks[data];
 
     await sendMessage(env, chatId, "⏳ Loading your " + net.name + " address...");
+    await new Promise(resolve => setTimeout(resolve, 5000));
 
     return sendMessage(
       env,
