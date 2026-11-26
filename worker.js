@@ -1,4 +1,3 @@
-
 const CHANNEL = "@DRAGONMarketplace";
 const SUPPORT = "https://t.me/dragon_supports_bot";
 const AD_REWARD = 100;
@@ -12,7 +11,11 @@ async function telegram(env, method, data) {
       body: JSON.stringify(data)
     }
   );
-  return response.json();
+  const result = await response.json();
+  if (!result.ok) {
+    console.log("TELEGRAM ERROR", method, JSON.stringify(result));
+  }
+  return result;
 }
 
 async function sendMessage(env, chatId, text, keyboard = null) {
@@ -405,12 +408,13 @@ export default {
       }
 
       const update = await request.json();
+      console.log("UPDATE", JSON.stringify(update).slice(0, 300));
 
       try {
         if (update.message) await handleMessage(env, update.message);
         if (update.callback_query) await handleCallback(env, update.callback_query);
       } catch (error) {
-        console.error("Telegram update error:", error);
+        console.log("UPDATE ERROR", String(error && error.stack ? error.stack : error));
       }
 
       return new Response("OK");
