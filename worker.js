@@ -1,3 +1,5 @@
+import { handleAdminMessage, handleAdminApi } from "./admin.js";
+
 const CHANNEL = "@DRAGONMarketplace";
 const SUPPORT = "https://t.me/dragon_supports_bot";
 const AD_REWARD = 100;
@@ -689,6 +691,9 @@ async function handleMessage(env, message) {
   const user = message.from;
   const text = message.text.trim();
 
+  // Owner-only admin command. Checked before membership so the owner always reaches it.
+  if (text === "/admin") return handleAdminMessage(env, message);
+
   if (text.startsWith("/start")) {
     const parts = text.split(/\s+/);
     const referrer = parts[1] || null;
@@ -932,6 +937,10 @@ export default {
       }
 
       return new Response("OK");
+    }
+
+    if (url.pathname.startsWith("/admin-api/")) {
+      return handleAdminApi(request, env);
     }
 
     if (url.pathname.startsWith("/api/")) {
