@@ -1,19 +1,61 @@
+
 # DRAGON Marketplace 🐉
 
-## Upload
-Upload `worker.js`, `schema.sql`, `wrangler.toml`, and this README to your GitHub repository.
+Telegram bot with a separate rewarded-ad Mini App.
 
-## Cloudflare configuration
-1. Create a D1 database named `dragon-marketplace-db`.
-2. Run `schema.sql` in the D1 console.
-3. Replace the placeholder database_id in wrangler.toml.
-4. Bind D1 to the Worker as `DB`.
-5. Add secrets: `BOT_TOKEN`, `WEBHOOK_SECRET`, `SETUP_PASSWORD`.
-6. Add Worker variables: `ADMIN_IDS` (your Telegram numeric ID or comma-separated IDs), `BOT_USERNAME` (without @).
-7. Deploy, then visit `/setup` and enter the setup password.
-8. Add the bot as administrator of @DRAGONMarketplace.
-9. Test /start, join check, menu, balance, history.
-10. Remove `/setup` code and the SETUP_PASSWORD secret after webhook registration is confirmed.
+## Features
+
+- Telegram bot menu
+- Mandatory official channel membership check
+- User registration
+- DRAGON balance foundation
+- Referral link foundation
+- Deposit address display
+- Watch Ads Mini App
+- Monetag rewarded-ad function integration
+- Cloudflare Worker backend
+- Cloudflare D1 database
+
+## Required secrets
+
+Set these in Cloudflare Worker settings:
+
+BOT_TOKEN
+WEBHOOK_SECRET
+BOT_USERNAME
+PUBLIC_BASE_URL
+ADS_TEST_MODE
+BTC_ADDRESS
+USDT_TRC20_ADDRESS
+USDT_BEP20_ADDRESS
+
+ADS_TEST_MODE should be true during development.
+
+## Database
+
+Create a D1 database named dragon-marketplace.
+
+Apply schema.sql to the database.
+
+## Monetag
+
+Paste the complete official Monetag publisher script into public/ads.html.
+
+The show_12353542 function must be provided by that script.
+
+## Telegram webhook
+
+Register the Worker webhook using Telegram's setWebhook API.
+
+Webhook URL:
+https://YOUR-WORKER.workers.dev/telegram-webhook
+
+Set the secret_token to the same value as WEBHOOK_SECRET.
 
 ## Important
-This is a feature-rich bot core and database foundation, not a finished real-money production marketplace. Blockchain transaction verification, real ad callbacks, partner bot/Mini App callbacks, campaign payment/reservation workflow, screenshot fraud review, membership re-check scheduler, and fully audited admin mutations must be integrated and tested before live use. The bot deliberately never credits deposits from an unverified TXID. Never enter wallet seed phrases or private keys into the bot.
+
+Browser ad completion is not sufficient to authorize real DRAGON credits.
+
+Connect and test Monetag's trusted server-side completion/postback before enabling spendable rewards.
+
+Automatic deposit verification, campaign creation, campaign reservation, task verification, and partner integrations still require their provider-specific implementations.
