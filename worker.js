@@ -144,6 +144,10 @@ async function handleCallback(env, callback) {
 
   await registerUser(env, user);
 
+  if (data === "menu") {
+    return showHome(env, chatId);
+  }
+
   if (data === "balance") {
     const balance = await getBalance(env, user.id);
     return sendMessage(
@@ -157,10 +161,45 @@ async function handleCallback(env, callback) {
     return sendMessage(
       env,
       chatId,
-      "🪙 <b>Deposit</b>\n\nBTC:\n" + (env.BTC_ADDRESS || "Not configured") +
-      "\n\nUSDT TRC20:\n" + (env.USDT_TRC20_ADDRESS || "Not configured") +
-      "\n\nUSDT BEP20:\n" + (env.USDT_BEP20_ADDRESS || "Not configured") +
-      "\n\nMinimum deposit: 5 USDT equivalent.\n\nDeposit verification is not yet connected. Do not send funds until the verification system has been tested."
+      "🪙 <b>Choose a deposit network</b>\n\nSelect the network you will send from. You will then see only the address for that network.\n\nMinimum deposit: 5 USDT equivalent.",
+      {
+        inline_keyboard: [
+          [{ text: "₿ Bitcoin (BTC)", callback_data: "dep_btc" }],
+          [{ text: "💵 USDT TRC20", callback_data: "dep_trc20" }],
+          [{ text: "💵 USDT BEP20", callback_data: "dep_bep20" }],
+          [{ text: "⬅️ Back to menu", callback_data: "menu" }]
+        ]
+      }
+    );
+  }
+
+  if (data === "dep_btc" || data === "dep_trc20" || data === "dep_bep20") {
+    const networks = {
+      dep_btc: {
+        name: "Bitcoin (BTC)",
+        address: env.BTC_ADDRESS,
+        warning: "Send only Bitcoin (BTC) to this address. Other coins or tokens may be lost."
+      },
+      dep_trc20: {
+        name: "USDT TRC20 (Tron network)",
+        address: env.USDT_TRC20_ADDRESS,
+        warning: "Send only USDT on the TRC20 (Tron) network. Other networks may be lost."
+      },
+      dep_bep20: {
+        name: "USDT BEP20 (BNB Smart Chain)",
+        address: env.USDT_BEP20_ADDRESS,
+        warning: "Send only USDT on the BEP20 (BNB Smart Chain) network. Other networks may be lost."
+      }
+    };
+
+    const net = networks[data];
+
+    await sendMessage(env, chatId, "⏳ Loading your " + net.name + " address...");
+
+    return sendMessage(
+      env,
+      chatId,
+      "🪙 <b>" + net.name + " deposit address</b>\n\n<code>" + (net.address || "Not configured") + "</code>\n\n⚠️ " + net.warning + "\n\nMinimum deposit: 5 USDT equivalent.\n\nTap the address to copy it."
     );
   }
 
