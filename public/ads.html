@@ -14,7 +14,7 @@
   button:disabled { background: #4b5563; }
   .status { min-height: 48px; margin-top: 14px; line-height: 1.4; }
   .test { color: #fbbf24; font-weight: bold; min-height: 20px; }
-  .debug { color: #9ca3af; font-size: 12px; margin-top: 12px; }
+  .debug { color: #9ca3af; font-size: 12px; margin-top: 12px; text-align: left; word-break: break-all; }
 </style>
 </head>
 <body>
@@ -36,14 +36,22 @@ const watchBtn = document.getElementById("watch");
 let busy = false;
 
 const initData = tg ? tg.initData : "";
-debugEl.textContent = "Session data length: " + (initData ? initData.length : 0);
+const unsafeUser = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
 
-if (!initData) {
-  setStatus("Open this page from the 🎬 Watch Ads button in the bot, not from a link.");
-  watchBtn.disabled = true;
-}
+debugEl.textContent =
+  "Telegram script: " + (tg ? "yes" : "NO") +
+  " | Session length: " + (initData ? initData.length : 0) +
+  " | Platform: " + (tg && tg.platform ? tg.platform : "unknown") +
+  " | Ad SDK: " + (typeof show_12353542 === "function" ? "loaded" : "NOT loaded") +
+  " | User seen: " + (unsafeUser ? unsafeUser.id : "none");
 
 function setStatus(text) { statusEl.textContent = text; }
+
+if (!tg) {
+  setStatus("Telegram did not load on this page. Open it from the 🎬 Watch Ads button in the bot.");
+} else if (!initData) {
+  setStatus("Telegram opened the page but did not send your session. Update the Telegram app, then close this page and tap 🎬 Watch Ads from the bot again.");
+}
 
 async function loadMe() {
   if (!initData) return;
@@ -56,8 +64,9 @@ async function loadMe() {
     document.getElementById("reward").textContent = data.adReward;
     document.getElementById("mode").textContent =
       data.testMode ? "TEST MODE: no spendable DRAGON is paid." : "";
+    setStatus("Ready. Tap Watch Advertisement.");
   } catch (e) {
-    setStatus("Connection error. Please try again.");
+    setStatus("Connection error: " + e.message);
   }
 }
 
@@ -74,7 +83,18 @@ async function reportCompletion(sessionId) {
 }
 
 watchBtn.addEventListener("click", async () => {
-  if (busy || !initData) return;
+  if (busy) return;
+
+  if (!initData) {
+    setStatus("No Telegram session on this page, so the reward cannot be checked. Open it from the bot's 🎬 Watch Ads button.");
+    return;
+  }
+
+  if (typeof show_12353542 !== "function") {
+    setStatus("The ad provider did not load. Check your internet connection and try again.");
+    return;
+  }
+
   busy = true;
   watchBtn.disabled = true;
   setStatus("⏳ Loading advertisement...");
@@ -87,7 +107,7 @@ watchBtn.addEventListener("click", async () => {
     const data = await reportCompletion(sessionId);
     setStatus(data.error ? "❌ " + data.error : "✅ " + data.message);
   } catch (e) {
-    setStatus("Advertisement unavailable or not completed. Please try again later.");
+    setStatus("Advertisement unavailable or not completed: " + (e && e.message ? e.message : "try again later."));
   } finally {
     busy = false;
     watchBtn.disabled = false;
