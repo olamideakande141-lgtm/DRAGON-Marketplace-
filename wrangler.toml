@@ -12,7 +12,7 @@ database_name = "dragon-marketplace"
 database_id = "cbf065f7-1683-446d-a789-fb8c754a1286"
 
 [vars]
-BOT_USERNAME = "YOUR_BOT_USERNAME"
+BOT_USERNAME = "dragon_promotion_bot"
 PUBLIC_BASE_URL = "https://royal-cherry-04c7dragonmarketplace.olamideakande141.workers.dev"
 ADS_TEST_MODE = "true"
 BTC_ADDRESS = "bc1q5tueekneell0twuaavs9gsacmehtr002g060m2"
