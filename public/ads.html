@@ -1,0 +1,199 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DRAGON Watch Ads</title>
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!--
+    IMPORTANT:
+    Paste the complete official Monetag integration script
+    supplied in your Monetag publisher dashboard here.
+    The show_12353542 function must be loaded by that script.
+  -->
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #10131b;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    .container {
+      max-width: 450px;
+      margin: auto;
+    }
+
+    .header {
+      text-align: center;
+      padding: 30px 0;
+    }
+
+    .dragon { font-size: 55px; }
+
+    .card {
+      background: #1c2230;
+      border: 1px solid #30394b;
+      padding: 22px;
+      border-radius: 17px;
+      margin-bottom: 18px;
+    }
+
+    .balance {
+      font-size: 30px;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    button {
+      width: 100%;
+      border: none;
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 15px;
+      background: #e7a928;
+      color: #151515;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    button:disabled { opacity: .5; }
+
+    .muted { color: #aeb5c5; }
+    #message { margin-top: 15px; line-height: 1.5; }
+    .small { font-size: 12px; line-height: 1.6; }
+  </style>
+</head>
+
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="dragon">🐉</div>
+    <h2>DRAGON Marketplace</h2>
+    <div class="muted">Rewarded Video Ads</div>
+  </div>
+
+  <div class="card">
+    <div class="muted">Available DRAGON</div>
+    <div class="balance" id="balance">Loading...</div>
+    <div class="muted small">Your test credits are displayed separately.</div>
+    <p id="testBalance" class="small"></p>
+  </div>
+
+  <div class="card">
+    <h3>🎬 Watch an advertisement</h3>
+    <p class="muted">Complete an eligible advertisement to qualify for 100 DRAGON.</p>
+
+    <button id="watchButton" onclick="watchAd()">
+      ▶ Watch Ad — 100 DRAGON
+    </button>
+
+    <div id="message"></div>
+  </div>
+
+  <p class="muted small">
+    DRAGON is an internal platform credit, not a cryptocurrency or cash balance.
+    Real rewards require verified advertising-provider completion.
+  </p>
+
+</div>
+
+<script>
+  const tg = window.Telegram.WebApp;
+  tg.ready();
+  tg.expand();
+
+  const initData = tg.initData;
+
+  const message = document.getElementById("message");
+  const button = document.getElementById("watchButton");
+
+  function showMessage(text) {
+    message.textContent = text;
+  }
+
+  async function api(path, method = "GET", data = null) {
+    const response = await fetch(path, {
+      method,
+      headers: {
+        "X-Telegram-Init-Data": initData,
+        ...(data ? { "Content-Type": "application/json" } : {})
+      },
+      body: data ? JSON.stringify(data) : undefined
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || "Request failed");
+    }
+
+    return result;
+  }
+
+  async function loadBalance() {
+    try {
+      const result = await api("/api/me");
+
+      document.getElementById("balance").textContent =
+        Number(result.available).toLocaleString() + " DRAGON";
+
+      document.getElementById("testBalance").textContent =
+        "Test credits: " + Number(result.testCredits).toLocaleString();
+
+      if (result.testMode) {
+        showMessage("Test mode is enabled. Test credits are not withdrawable.");
+      }
+    } catch (error) {
+      showMessage(error.message);
+    }
+  }
+
+  async function watchAd() {
+    if (!initData) {
+      showMessage("Open this page through the DRAGON Telegram bot.");
+      return;
+    }
+
+    if (typeof window.show_12353542 !== "function") {
+      showMessage("Monetag has not loaded. Check that your official Monetag script is installed.");
+      return;
+    }
+
+    button.disabled = true;
+    showMessage("Opening advertisement...");
+
+    try {
+      await window.show_12353542();
+
+      const sessionId = crypto.randomUUID();
+
+      const result = await api("/api/ad/complete", "POST", {
+        sessionId
+      });
+
+      showMessage(result.message);
+
+      await loadBalance();
+
+    } catch (error) {
+      showMessage(
+        "The advertisement did not complete successfully: " + error.message
+      );
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  loadBalance();
+</script>
+</body>
+</html>
