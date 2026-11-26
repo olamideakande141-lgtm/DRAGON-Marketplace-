@@ -11,6 +11,11 @@ binding = "DB"
 database_name = "dragon-marketplace"
 database_id = "cbf065f7-1683-446d-a789-fb8c754a1286"
 
+[observability.logs]
+enabled = true
+invocation_logs = true
+persist = true
+
 [vars]
 BOT_USERNAME = "dragon_promotion_bot"
 PUBLIC_BASE_URL = "https://royal-cherry-04c7dragonmarketplace.olamideakande141.workers.dev"
